@@ -1,0 +1,22 @@
+.axis path,
+.axis line {
+    fill: none;
+    stroke: #ccc;
+    shape-rendering: crispEdges;
+}
+.axis text {
+    font-family: sans-serif;
+    font-size: 11px;
+}
+.loading {
+    font-family: sans-serif;
+    font-size: 15px;
+}
+.circle {
+    fill: #222;
+}
+line {
+    stroke: #f00;
+}
+svg {
+}
