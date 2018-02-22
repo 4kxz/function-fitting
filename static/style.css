@@ -1,34 +1,63 @@
+:root {
+    --ying-color: #eee;
+    --yang-color: #222;
+}
+html {
+    height: 100%;
+}
 body {
-    background-color: #f8f8f8;
+    background-color: var(--ying-color);
+    color: var(--yang-color);
     margin: 0;
+    display: grid;
+    grid-template-columns: 50% 50%;
+    grid-template-areas: "a b";
+    font-family: sans-serif;
+    font-size: 12px;
+    height: 100%;
+}
+.view {
+    justify-self: center;
+    align-self: center;
+}
+.panel {
+    background-color: var(--yang-color);
+    color: var(--ying-color);
 }
 svg {
-    background-color: #f0f0f0;
+    display: block;
 }
-.axis path,
+.axis path {
+    stroke: rgba(128, 128, 128, 0.2);
+    shape-rendering: crispEdges;
+}
 .axis line {
-    fill: none;
-    stroke: rgba(0, 0, 0, 0.12);
+    stroke: rgba(128, 128, 128, 0.5);
     shape-rendering: crispEdges;
 }
 .axis text {
+    fill: var(--yang-color);
     font-family: sans-serif;
     font-size: 12px;
 }
-.circle {
-    fill: #000;
-    stroke: #fff;
-    shape-rendering: geometricPrecision;
+.fits path {
+    fill: none;
 }
-.circle:hover {
-    fill: #fff;
-    stroke: #000;
+.points circle {
+    fill: var(--ying-color);
+    stroke: var(--yang-color);
+}
+.points circle:hover {
+    fill: var(--yang-color);
+    stroke: var(--ying-color);
     cursor: pointer;
 }
-path {
-    fill: none;
-    stroke: #f00;
-    shape-rendering: geometricPrecision;
+table {
+    border-collapse: collapse;
 }
-svg {
+tr:not(:first-child) {
+    border-top: 1px solid rgba(128, 128, 128, 0.2);
+}
+td {
+    padding: 5px;
 }

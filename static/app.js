@@ -1,77 +1,132 @@
-var width = 640;
-var height = 640;
+var size = 740;
 var pad = 40;
-var xDomain = [0, 10];
-var yDomain = [10, 0];
-
-var xScale = d3.scale.linear().domain(xDomain).range([pad, width - pad]);
-var yScale = d3.scale.linear().domain(yDomain).range([pad, height - pad]);
-var xAxis = d3.svg.axis().scale(xScale).orient("bottom");
-var yAxis = d3.svg.axis().scale(yScale).orient("left");
+var fmt = d3.format(".3n");
 var points = [
     {x: 2, y: 2},
     {x: 5, y: 4},
-    {x: 8, y: 5},
+    {x: 7, y: 5},
+    {x: 8, y: 4},
 ];
+var fits = [];
 
-var svg = d3.select("body").append("svg")
-    .attr("width", width)
-    .attr("height", height);
+var x = {
+    domain: [0, 10],
+    range: [pad, size - pad],
+};
+var y = {
+    domain: [10, 0],
+    range: [pad, size - pad],
+};
+x.scale = d3.scaleLinear().domain(x.domain).range(x.range);
+y.scale = d3.scaleLinear().domain(y.domain).range(y.range);
+x.axis = d3.axisBottom(x.scale);
+y.axis = d3.axisLeft(y.scale);
+
+var svg = d3.select("body")
+    .append("div")
+    .attr("class", "view")
+    .append("svg")
+    .attr("width", size)
+    .attr("height", size)
+;
+
+var svgPoints = svg.append("g")
+    .attr("class", "points")
+;
+
+var svgFits = svg.append("g")
+    .attr("class", "fits")
+;
+
+var table = d3.select("body")
+    .append("div")
+    .attr("class", "panel")
+    .append("table")
+    ;
 
 svg.append("g")
     .attr("class", "axis")
-    .attr("transform", `translate(0, ${height - pad})`)
-    .call(xAxis);
+    .attr("transform", `translate(0, ${size - pad})`)
+    .call(x.axis)
+;
 
 svg.append("g")
     .attr("class", "axis")
     .attr("transform", `translate(${pad}, 0)`)
-    .call(yAxis);
+    .call(y.axis)
+;
 
-var line = d3.svg.line()
-    .x(d => xScale(d.x))
-    .y(d => yScale(d.y))
-    .interpolate('linear')
+var fitLine = d3.line()
+    .x(d => x.scale(d.x))
+    .y(d => y.scale(d.y))
+;
+
+function drawPoints(data) {
+    var circles = svgPoints.selectAll("circle").data(data);
+    circles.enter().append("circle")
+        .attr("class", "point")
+        .attr("r", 4)
+        .attr("cx", d => x.scale(d.x))
+        .attr("cy", d => y.scale(d.y))
     ;
+    circles.exit().remove();
+    var rows = table.selectAll("tr")
+        .data(data)
+        .enter()
+        .append("tr");
+    var cells = rows.selectAll("td")
+        .data(d => [d.x, d.y])
+        .enter().append("td")
+        .text(d => fmt(d));
+};
 
-function draw(points, path) {
-    var circle = svg.selectAll("circle").data(points);
-    circle.exit().remove();
-    circle.enter().append("circle");
-    circle
-        .attr("class", "circle")
-        .attr("r", 5)
-        .attr("cx", d => xScale(d.x))
-        .attr("cy", d => yScale(d.y))
-        ;
-    svg.selectAll(".fit").remove();
-    svg.append("path")
-        .attr("class", "fit")
-        .attr("d", line(path))
-        .attr("fill", "transparent")
-        ;
-}
+function drawFits(data) {
+    var paths = svgFits.selectAll("path").data(data);
+    paths.enter().append("path")
+        .attr("stroke", d => d.color)
+        .attr("d", d => fitLine(d.path))
+    ;
+    paths.transition()
+        .duration(1000)
+        .attr("d", d => fitLine(d.path))
+    ;
+    paths.exit().remove();
+};
 
-function fit(points) {
+function updateFits(error, response) {
+    console.log(response.color);
+    console.log(fits);
+    fits[response.index] = response;
+    drawFits(fits);
+};
+
+function update() {
     var postData = JSON.stringify({
-        domain: xDomain,
+        domain: x.domain,
         points: points,
     });
-    d3.json('/polynomial')
+    d3.json('/polynomial/1')
         .header("Content-Type", "application/json")
-        .post(postData, function(error, response) {
-            draw(points, response);
-        });
+        .post(postData, updateFits)
+    ;
+    d3.json('/polynomial/2')
+        .header("Content-Type", "application/json")
+        .post(postData, updateFits)
+    ;
+    d3.json('/polynomial/3')
+        .header("Content-Type", "application/json")
+        .post(postData, updateFits)
+    ;
+    drawPoints(points);
 }
 
-fit(points);
-
+update();
 
 svg.on('click', function() {
-    var [x, y] = d3.mouse(this);
+    let coord = d3.mouse(this);
     points.push({
-        x: xScale.invert(x),
-        y: yScale.invert(y),
+        x: x.scale.invert(coord[0]),
+        y: y.scale.invert(coord[1]),
     });
-    fit(points);
+    update();
 });

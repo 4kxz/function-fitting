@@ -1,8 +1,9 @@
 from flask import Flask, jsonify, request, send_from_directory
-from sklearn.linear_model import LinearRegression
 import numpy as np
 
 app = Flask(__name__)
+
+COLOR = '#F00', '#B00', '#800'
 
 
 @app.route('/')
@@ -24,27 +25,15 @@ def process_request():
     }
 
 
-@app.route('/linear', methods=['POST'])
-def linear():
-    regressor = LinearRegression()
+@app.route('/polynomial/<int:degree>', methods=['POST'])
+def polynomial(degree):
     data = process_request()
-    x = np.expand_dims(data['x'], axis=1)
-    regressor.fit(x, data['y'])
-    c = regressor.coef_[0]
-    i = regressor.intercept_
-    print(c, i)
-    path = [
-        {'x': 0, 'y': i},
-        {'x': 1, 'y': c + i},
-    ]
-    return jsonify(path)
-
-
-@app.route('/polynomial', methods=['POST'])
-def polynomial():
-    data = process_request()
-    z = np.polyfit(data['x'], data['y'], 3)
+    z = np.polyfit(data['x'], data['y'], degree)
     f = np.poly1d(z)
     x = np.linspace(*data['domain'], 100)
     y = f(x)
-    return jsonify([{'x': x, 'y': y} for x, y in zip(x, y)])
+    return jsonify({
+        'index': degree - 1,
+        'color': COLOR[degree - 1],
+        'path': [{'x': x, 'y': y} for x, y in zip(x, y)],
+    })
