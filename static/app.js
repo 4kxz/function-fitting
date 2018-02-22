@@ -1,15 +1,17 @@
 var width = 640;
-var height = 360;
+var height = 640;
 var pad = 40;
+var xDomain = [0, 10];
+var yDomain = [10, 0];
 
-var xScale = d3.scale.linear().domain([0, 1]).range([pad, width - pad]);
-var yScale = d3.scale.linear().domain([1, 0]).range([pad, height - pad]);
+var xScale = d3.scale.linear().domain(xDomain).range([pad, width - pad]);
+var yScale = d3.scale.linear().domain(yDomain).range([pad, height - pad]);
 var xAxis = d3.svg.axis().scale(xScale).orient("bottom");
 var yAxis = d3.svg.axis().scale(yScale).orient("left");
 var points = [
-    {x: 0.2, y: 0.2},
-    {x: 0.5, y: 0.4},
-    {x: 0.8, y: 0.5},
+    {x: 2, y: 2},
+    {x: 5, y: 4},
+    {x: 8, y: 5},
 ];
 
 var svg = d3.select("body").append("svg")
@@ -30,6 +32,7 @@ var line = d3.svg.line()
     .x(d => xScale(d.x))
     .y(d => yScale(d.y))
     .interpolate('linear')
+    ;
 
 function draw(points, path) {
     var circle = svg.selectAll("circle").data(points);
@@ -37,25 +40,27 @@ function draw(points, path) {
     circle.enter().append("circle");
     circle
         .attr("class", "circle")
+        .attr("r", 5)
         .attr("cx", d => xScale(d.x))
         .attr("cy", d => yScale(d.y))
-        .attr("r", 2);
+        ;
     svg.selectAll(".fit").remove();
     svg.append("path")
         .attr("class", "fit")
         .attr("d", line(path))
-        .attr("stroke", "blue");
-    // svg.append('path')
-    //     .attr("d", line(path))
-    //     .attr("stroke", "blue");
+        .attr("fill", "transparent")
+        ;
 }
 
 function fit(points) {
-    d3.json('/linear')
+    var postData = JSON.stringify({
+        domain: xDomain,
+        points: points,
+    });
+    d3.json('/polynomial')
         .header("Content-Type", "application/json")
-        .post(JSON.stringify(points), function(error, data) {
-            console.log(data);
-            draw(points, data);
+        .post(postData, function(error, response) {
+            draw(points, response);
         });
 }
 
