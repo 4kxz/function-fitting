@@ -25,30 +25,30 @@ svg {
     display: block;
     margin: 0 auto;
 }
-svg .axis path {
+svg g.axis path {
     stroke: rgba(128, 128, 128, 0.2);
     shape-rendering: crispEdges;
 }
-svg .axis line {
+svg g.axis line {
     stroke: rgba(128, 128, 128, 0.5);
     shape-rendering: crispEdges;
 }
-svg .axis text {
+svg g.axis text {
     fill: var(--yang-color);
     font-family: sans-serif;
     font-size: 12px;
 }
-svg .fits path {
-    fill: none;
-}
-svg .points circle {
-    fill: var(--ying-color);
-    stroke: var(--yang-color);
-}
-svg .points circle:hover {
+svg circle.point {
     fill: var(--yang-color);
     stroke: var(--ying-color);
+}
+svg circle.point:hover {
+    fill: var(--ying-color);
+    stroke: var(--yang-color);
     cursor: pointer;
+}
+svg path.fit {
+    fill: none;
 }
 table {
     border-collapse: collapse;

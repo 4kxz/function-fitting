@@ -3,7 +3,7 @@ import numpy as np
 
 app = Flask(__name__)
 
-COLOR = '#F00', '#B00', '#800'
+COLOR = '#F00', '#B00', '#B00', '#B00', '#B00'
 
 
 @app.route('/')
@@ -16,24 +16,15 @@ def static_files(path):
     return send_from_directory('static', path)
 
 
-def process_request():
-    points = request.json['points']
-    return {
-        'domain': request.json['domain'],
-        'x': [p['x'] for p in points],
-        'y': [p['y'] for p in points],
-    }
-
-
 @app.route('/polynomial/<int:degree>', methods=['POST'])
 def polynomial(degree):
-    data = process_request()
-    z = np.polyfit(data['x'], data['y'], degree)
-    f = np.poly1d(z)
-    x = np.linspace(*data['domain'], 100)
-    y = f(x)
+    data = request.json
+    x = [p['x'] for p in data['points']]
+    y = [p['y'] for p in data['points']]
+    p = np.poly1d(np.polyfit(x, y, degree))
+    x_min, x_max = data['domain']['x']
     return jsonify({
-        'index': degree - 1,
+        'degree': degree,
         'color': COLOR[degree - 1],
-        'path': [{'x': x, 'y': y} for x, y in zip(x, y)],
+        'path': [{'x': x, 'y': p(x)} for x in np.linspace(x_min, x_max, 100)],
     })
