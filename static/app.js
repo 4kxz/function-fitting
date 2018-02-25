@@ -1,4 +1,4 @@
-var DELAY = 1000;
+var DELAY = 1200;
 
 class Server {
 
@@ -17,13 +17,14 @@ class Server {
 
 class State {
 
-    constructor(min, max) {
+    constructor(x, y) {
         this.server = new Server();
         this.domain = {
-            x: [min, max],
-            y: [min, max],
+            x: x,
+            y: y,
         };
         this.points = [];
+        this.pointsNextId = 0;
         this.functions = [];
         this.fits = [];
     }
@@ -36,6 +37,7 @@ class State {
     }
 
     addFunction(url) {
+        console.log('addFunction');
         this.functions.push(url);
     }
 
@@ -60,24 +62,25 @@ class State {
                 point.y > this.domain.y[1]) {
                 reject("not in the domain");
             } else {
+                point.id = this.pointsNextId++;
                 this.points.push(point);
                 resolve(this);
             }
         });
     }
 
-    removePoint(index) {
+    removePoint(point) {
         console.log('removePoint');
         return new Promise((resolve, reject) => {
-            if (index >= 0 && index < this.points.length) {
-                delete this.points[index];
+            let index = this.points.indexOf(point);
+            if (index > -1) {
+                this.points.splice(index, 1);
                 resolve(this);
             } else {
                 reject("cant remove");
             }
         });
     }
-
 }
 
 class View {
@@ -87,6 +90,7 @@ class View {
         this.size = this.computeSize();
         this.range = this.computeRange();
         this.pad = 40;
+        this.fmt = d3.format('.3r');
         this.axes = [{
             axis: d3.axisBottom,
             transform: (size, pad) => `translate(0, ${size - pad})`,
@@ -141,26 +145,23 @@ class View {
     drawPoints(state) {
         console.log('drawPoints');
         this.circles = this.svg.selectAll('circle.point')
-            .data(state.points);
-            // .data(state.points, d => `${d.x},${d.y}`);
+            .data(state.points, d => d.id);
         this.circles.enter()
             .append('circle')
             .attr('class', 'point')
             .attr('r', 3)
             .attr('cx', d => this.axes[0].scale(d.x))
             .attr('cy', d => this.axes[1].scale(d.y))
-            .on('click', (d, i) => {
+            .on('click', d => {
                 d3.event.stopPropagation();
-                state.removePoint(i)
+                state.removePoint(d)
                     .then(() => this.drawPoints(state))
                     .then(() => state.update())
                     .then(() => this.draw(state))
                 ;
             })
-        ;
-        this.circles.transition()
-            .duration(DELAY)
-            .style('display', d => d === undefined ? 'none' : 'default')
+            .append('title')
+            .text(d => `(${this.fmt(d.x)}, ${this.fmt(d.y)})`)
         ;
         this.circles.exit().remove();
     }
@@ -196,23 +197,16 @@ class View {
 
 }
 
-var state = new State(0, 10);
+var state = new State([0, 10], [0, 100]);
 var view = new View(state);
 
 state.addFunction('/polynomial/1');
 state.addFunction('/polynomial/2');
-state.addFunction('/polynomial/3');
 
-Promise.all([
-    state.addPoint({x: 2, y: 3}),
-    state.addPoint({x: 4, y: 6}),
-    state.addPoint({x: 6, y: 5}),
-    state.addPoint({x: 8, y: 6}),
-])
-    .then(() => view.drawPoints(state))
-    .then(() => state.update())
-    .then(() => view.drawFits(state))
-;
+d3.csv('/static/example.csv', data => {
+    data.forEach(d => state.addPoint({x: +d.x, y: +d.y}));
+    state.update().then(() => view.draw(state));
+})
 
 view.svg.on('click', function() {
     var p = view.mousePoint(this);

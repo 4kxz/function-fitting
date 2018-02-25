@@ -19,7 +19,7 @@ def polynomial(degree):
     if not request.json['points']:
         return jsonify({'empty': True})
 
-    v = [p for p in request.json['points'] if p is not None]
+    v = request.json['points']
     x = [p['x'] for p in v]
     y = [p['y'] for p in v]
     p = np.poly1d(np.polyfit(x, y, degree))
