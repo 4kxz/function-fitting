@@ -24,6 +24,7 @@ class State {
             y: [min, max],
         };
         this.points = [];
+        this.functions = [];
         this.fits = [];
     }
 
@@ -34,16 +35,20 @@ class State {
         ]).then(() => this);
     }
 
+    addFunction(url) {
+        this.functions.push(url);
+    }
+
     updateFits() {
         console.log('updateFits');
-        return Promise.all([
-            this.server.getFit('/polynomial/1', this),
-            this.server.getFit('/polynomial/2', this),
-            this.server.getFit('/polynomial/3', this),
-        ]).then(results => {
-            this.fits = results.filter(x => !x.empty);
-            return this;
-        });
+        var getFits = this.functions.map(x => this.server.getFit(x, this));
+        var promise = Promise.all(getFits)
+            .then(results => {
+                this.fits = results.filter(x => !x.empty);
+                return this;
+            })
+        ;
+        return promise;
     }
 
     addPoint(point) {
@@ -135,7 +140,9 @@ class View {
 
     drawPoints(state) {
         console.log('drawPoints');
-        this.circles = this.svg.selectAll('circle.point').data(state.points);
+        this.circles = this.svg.selectAll('circle.point')
+            .data(state.points);
+            // .data(state.points, d => `${d.x},${d.y}`);
         this.circles.enter()
             .append('circle')
             .attr('class', 'point')
@@ -192,6 +199,10 @@ class View {
 var state = new State(0, 10);
 var view = new View(state);
 
+state.addFunction('/polynomial/1');
+state.addFunction('/polynomial/2');
+state.addFunction('/polynomial/3');
+
 Promise.all([
     state.addPoint({x: 2, y: 3}),
     state.addPoint({x: 4, y: 6}),
@@ -206,7 +217,7 @@ Promise.all([
 view.svg.on('click', function() {
     var p = view.mousePoint(this);
     state.addPoint(p)
-        .then(() => view.drawPoints())
+        .then(() => view.drawPoints(state))
         .then(() => state.update())
         .then(() => view.draw(state))
     ;
