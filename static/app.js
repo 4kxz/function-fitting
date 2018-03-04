@@ -69,6 +69,22 @@ class State {
         });
     }
 
+    movePoint(point, x, y) {
+        console.log('movePoint');
+        return new Promise((resolve, reject) => {
+            if (x < this.domain.x[0] ||
+                x > this.domain.x[1] ||
+                y < this.domain.y[0] ||
+                y > this.domain.y[1]) {
+                reject("not in the domain");
+            } else {
+                point.x = x;
+                point.y = y;
+                resolve(this);
+            }
+        });
+    }
+
     removePoint(point) {
         console.log('removePoint');
         return new Promise((resolve, reject) => {
@@ -124,6 +140,15 @@ class View {
                 d.axis(d.scale)(d3.select(this));
             })
         ;
+        var that = this;
+        this.svg.on('click', function() {
+            var p = that.mousePoint(this);
+            state.addPoint(p)
+                .then(() => that.drawPoints(state))
+                .then(() => state.update())
+                .then(() => that.draw(state))
+            ;
+        });
     }
 
     computeSize() {
@@ -144,6 +169,21 @@ class View {
 
     drawPoints(state) {
         console.log('drawPoints');
+        var that = this;
+        var drag = d3.drag().on('drag', function (d) {
+            var p = that.mousePoint(this);
+            d3.select(this)
+                .attr('cx', d => that.axes[0].scale(p.x))
+                .attr('cy', d => that.axes[1].scale(p.y))
+            ;
+        }).on('end', function (d) {
+            var p = that.mousePoint(this);
+            state.movePoint(d, p.x, p.y)
+                .then(() => state.update())
+                .then(() => that.draw(state))
+            ;
+        });
+
         this.circles = this.svg.selectAll('circle.point')
             .data(state.points, d => d.id);
         this.circles.enter()
@@ -152,6 +192,7 @@ class View {
             .attr('r', 3)
             .attr('cx', d => this.axes[0].scale(d.x))
             .attr('cy', d => this.axes[1].scale(d.y))
+            .call(drag)
             .on('click', d => {
                 d3.event.stopPropagation();
                 state.removePoint(d)
@@ -161,6 +202,12 @@ class View {
                 ;
             })
             .append('title')
+            .text(d => `(${this.fmt(d.x)}, ${this.fmt(d.y)})`)
+        ;
+        this.circles.transition()
+            .attr('cx', d => this.axes[0].scale(d.x))
+            .attr('cy', d => this.axes[1].scale(d.y))
+            .select('title')
             .text(d => `(${this.fmt(d.x)}, ${this.fmt(d.y)})`)
         ;
         this.circles.exit().remove();
@@ -187,7 +234,6 @@ class View {
     }
 
     mousePoint(svg) {
-        console.log('mousePoint');
         var coordinates = d3.mouse(svg);
         return {
             x: this.axes[0].scale.invert(coordinates[0]),
@@ -207,12 +253,3 @@ d3.csv('/static/example.csv', data => {
     data.forEach(d => state.addPoint({x: +d.x, y: +d.y}));
     state.update().then(() => view.draw(state));
 })
-
-view.svg.on('click', function() {
-    var p = view.mousePoint(this);
-    state.addPoint(p)
-        .then(() => view.drawPoints(state))
-        .then(() => state.update())
-        .then(() => view.draw(state))
-    ;
-});
