@@ -53,34 +53,34 @@ class State {
         return promise;
     }
 
+    isInDomain(point) {
+        let d = this.domain;
+        let {x, y} = point;
+        return d.x[0] <= x && x <= d.x[1] && d.y[0] <= y && y <= d.y[1];
+    }
+
     addPoint(point) {
         console.log('addPoint');
         return new Promise((resolve, reject) => {
-            if (point.x < this.domain.x[0] ||
-                point.x > this.domain.x[1] ||
-                point.y < this.domain.y[0] ||
-                point.y > this.domain.y[1]) {
-                reject("not in the domain");
-            } else {
+            if (this.isInDomain(point)) {
                 point.id = this.pointsNextId++;
                 this.points.push(point);
                 resolve(this);
+            } else {
+                reject("not in the domain");
             }
         });
     }
 
-    movePoint(point, x, y) {
+    movePoint(point, target) {
         console.log('movePoint');
         return new Promise((resolve, reject) => {
-            if (x < this.domain.x[0] ||
-                x > this.domain.x[1] ||
-                y < this.domain.y[0] ||
-                y > this.domain.y[1]) {
-                reject("not in the domain");
-            } else {
-                point.x = x;
-                point.y = y;
+            if (this.isInDomain(target)) {
+                point.x = target.x;
+                point.y = target.y;
                 resolve(this);
+            } else {
+                reject("not in the domain");
             }
         });
     }
@@ -178,7 +178,7 @@ class View {
             ;
         }).on('end', function (d) {
             var p = that.mousePoint(this);
-            state.movePoint(d, p.x, p.y)
+            state.movePoint(d, p)
                 .then(() => state.update())
                 .then(() => that.draw(state))
             ;
