@@ -1,4 +1,5 @@
 var DELAY = 1200;
+var FMT = d3.format('.3r');
 
 class Server {
 
@@ -106,7 +107,6 @@ class View {
         this.size = this.computeSize();
         this.range = this.computeRange();
         this.pad = 40;
-        this.fmt = d3.format('.3r');
         this.axes = [{
             axis: d3.axisBottom,
             transform: (size, pad) => `translate(0, ${size - pad})`,
@@ -202,13 +202,14 @@ class View {
                 ;
             })
             .append('title')
-            .text(d => `(${this.fmt(d.x)}, ${this.fmt(d.y)})`)
+            .text(d => `(${FMT(d.x)}, ${FMT(d.y)})`)
         ;
         this.circles.transition()
+            .duration(DELAY)
             .attr('cx', d => this.axes[0].scale(d.x))
             .attr('cy', d => this.axes[1].scale(d.y))
             .select('title')
-            .text(d => `(${this.fmt(d.x)}, ${this.fmt(d.y)})`)
+            .text(d => `(${FMT(d.x)}, ${FMT(d.y)})`)
         ;
         this.circles.exit().remove();
     }
@@ -253,3 +254,13 @@ d3.csv('/static/example.csv', data => {
     data.forEach(d => state.addPoint({x: +d.x, y: +d.y}));
     state.update().then(() => view.draw(state));
 })
+
+var panel = new Vue({
+    el: "#panel",
+    data: {
+        state: state,
+    },
+    filters: {
+        fmt: FMT,
+    },
+});

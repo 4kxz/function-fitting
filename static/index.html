@@ -4,11 +4,25 @@
     <meta charset="utf-8">
     <title>Curve Fitting App</title>
     <link rel="stylesheet" type="text/css" href="static/style.css">
+    <script defer src="https://use.fontawesome.com/releases/v5.0.8/js/all.js" integrity="sha384-SlE991lGASHoBfWbelyBPLsUlwY1GwNDJo3jSJO04KZ33K2bwfV9YBauFfnzvynJ" crossorigin="anonymous"></script>
 </head>
 <body>
     <div id="view"></div>
-    <div id="panel"></div>
+    <div id="panel">
+        <textarea placeholder="Paste points here to plot them."></textarea>
+        <table>
+            <tr>
+                <th>X</th>
+                <th>Y</th>
+            </tr>
+            <tr v-for="point in state.points">
+                <td>{{ point.x | fmt }}</td>
+                <td>{{ point.y | fmt }}</td>
+            </tr>
+        </table>
+    </div>
     <script src="https://d3js.org/d3.v4.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
     <script src="static/app.js"></script>
 </body>
 </html>
